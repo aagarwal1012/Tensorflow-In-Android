@@ -26,6 +26,9 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
 
+    //tensorflow library
     compile 'org.tensorflow:tensorflow-android:1.2.0'
+
+    //used for camera activity
     compile 'com.wonderkiln:camerakit:0.13.1'
 }
