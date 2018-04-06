@@ -38,12 +38,13 @@ public class TensorFlowImageClassifier implements Classifier {
     private float imageStd;
 
     // Pre-allocated buffers.
-    private Vector<String> labels = new Vector<String>();
+    private Vector<String> labels = new Vector<String>();  //store the lables present in imagenet_comp_graph_label_strings.txt
     private int[] intValues;
     private float[] floatValues;
     private float[] outputs;
     private String[] outputNames;
 
+    //From the tensorflow library
     private TensorFlowInferenceInterface inferenceInterface;
 
     private boolean runStats = false;
@@ -64,6 +65,7 @@ public class TensorFlowImageClassifier implements Classifier {
      * @param outputName    The label of the output node.
      * @throws IOException
      */
+
     public static Classifier create(
             AssetManager assetManager,
             String modelFilename,
@@ -89,6 +91,7 @@ public class TensorFlowImageClassifier implements Classifier {
         }
         br.close();
 
+
         c.inferenceInterface = new TensorFlowInferenceInterface(assetManager, modelFilename);
         // The shape of the output is [N, NUM_CLASSES], where N is the batch size.
         int numClasses =
@@ -111,16 +114,20 @@ public class TensorFlowImageClassifier implements Classifier {
         return c;
     }
 
+    //overriding methods from Classifier interface
+
     @Override
     public List<Recognition> recognizeImage(final Bitmap bitmap) {
+
         // Log this method so that it can be analyzed with systrace.
         TraceCompat.beginSection("recognizeImage");
+
 
         TraceCompat.beginSection("preprocessBitmap");
         // Preprocess the image data from 0-255 int to normalized float based
         // on the provided parameters.
-        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
-        for (int i = 0; i < intValues.length; ++i) {
+        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight()); //getting the pixel value from bitmap and storing in array intValues
+        for (int i = 0; i < intValues.length; ++i) {                                                               //pre-processing intValues
             final int val = intValues[i];
             floatValues[i * 3 + 0] = (((val >> 16) & 0xFF) - imageMean) / imageStd;
             floatValues[i * 3 + 1] = (((val >> 8) & 0xFF) - imageMean) / imageStd;
@@ -139,12 +146,13 @@ public class TensorFlowImageClassifier implements Classifier {
         inferenceInterface.run(outputNames, runStats);
         TraceCompat.endSection();
 
-        // Copy the output Tensor back into the output array.
+        // Copy the output Tensor back into the outputs array.
         TraceCompat.beginSection("fetch");
         inferenceInterface.fetch(outputName, outputs);
         TraceCompat.endSection();
 
-        // Find the best classifications.
+        // Find the best classifications using the priority queue data-structure
+        //making the priority queue
         PriorityQueue<Recognition> pq =
                 new PriorityQueue<Recognition>(
                         3,
@@ -155,6 +163,8 @@ public class TensorFlowImageClassifier implements Classifier {
                                 return Float.compare(rhs.getConfidence(), lhs.getConfidence());
                             }
                         });
+
+        //output only best 3
         for (int i = 0; i < outputs.length; ++i) {
             if (outputs[i] > THRESHOLD) {
                 pq.add(
@@ -162,12 +172,16 @@ public class TensorFlowImageClassifier implements Classifier {
                                 "" + i, labels.size() > i ? labels.get(i) : "unknown", outputs[i], null));
             }
         }
+
         final ArrayList<Recognition> recognitions = new ArrayList<Recognition>();
         int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
+        //getting values from pq and storing in ArrayList
         for (int i = 0; i < recognitionsSize; ++i) {
             recognitions.add(pq.poll());
         }
+
         TraceCompat.endSection(); // "recognizeImage"
+
         return recognitions;
     }
 

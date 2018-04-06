@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
+    //defining constants
     private static final int INPUT_SIZE = 224;
     private static final int IMAGE_MEAN = 117;
     private static final float IMAGE_STD = 1;
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String LABEL_FILE =
             "file:///android_asset/imagenet_comp_graph_label_strings.txt";
 
+    //creating objects
     private Classifier classifier;
     private Executor executor = Executors.newSingleThreadExecutor();
     private TextView textViewResult;
@@ -43,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //defining created objects
         cameraView = (CameraView) findViewById(R.id.cameraView);
         imageViewResult = (ImageView) findViewById(R.id.imageViewResult);
         textViewResult = (TextView) findViewById(R.id.textViewResult);
@@ -51,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         btnToggleCamera = (Button) findViewById(R.id.btnToggleCamera);
         btnDetectObject = (Button) findViewById(R.id.btnDetectObject);
 
+        //cameraview
         cameraView.addCameraKitListener(new CameraKitEventListener() {
             @Override
             public void onEvent(CameraKitEvent cameraKitEvent) {
@@ -67,12 +72,15 @@ public class MainActivity extends AppCompatActivity {
 
                 Bitmap bitmap = cameraKitImage.getBitmap();
 
+                //scalling bitmap to Input_Size*Input_Size
                 bitmap = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
 
                 imageViewResult.setImageBitmap(bitmap);
 
+                //recognizing bitmap
                 final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
 
+                //displaying it in textView
                 textViewResult.setText(results.toString());
 
             }
@@ -83,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //toggle button
         btnToggleCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -90,12 +99,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //detect button
         btnDetectObject.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 cameraView.captureImage();
             }
         });
+
 
         initTensorFlowAndLoadModel();
     }
@@ -123,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //inttilizing model
     private void initTensorFlowAndLoadModel() {
         executor.execute(new Runnable() {
             @Override
